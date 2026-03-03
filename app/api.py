@@ -1,16 +1,15 @@
 """
-Optional minimal REST API for the PGP Agentic RAG application.
+Optional REST API for the PGP Agentic RAG app.
 
 Run with:
     python app/api.py
   or:
     uvicorn app.api:app --reload
 
-Endpoints
----------
-POST /ingest  – Upload and index one or more documents.
-POST /query   – Ask a question; returns the agent's answer + sources.
-GET  /health  – Health check.
+Endpoints:
+    POST /ingest  - Upload and index documents.
+    POST /query   - Ask a question, get an answer + sources.
+    GET  /health  - Health check.
 """
 from __future__ import annotations
 
@@ -27,17 +26,10 @@ from app.agent import run_agent  # noqa: E402
 
 app = FastAPI(
     title="PGP Agentic RAG API",
-    description=(
-        "Upload enterprise documents and ask natural-language questions. "
-        "Powered by Gemini (Vertex AI) and a Chroma vector store."
-    ),
+    description="Upload documents and ask natural-language questions. Powered by Gemini + Chroma.",
     version="1.0.0",
 )
 
-
-# ---------------------------------------------------------------------------
-# Request / response models
-# ---------------------------------------------------------------------------
 
 class QueryRequest(BaseModel):
     question: str
@@ -50,10 +42,6 @@ class QueryResponse(BaseModel):
     sources: list[str]
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
 @app.get("/health")
 def health() -> dict:
     """Simple liveness check."""
@@ -62,10 +50,7 @@ def health() -> dict:
 
 @app.post("/ingest", summary="Upload and index documents")
 async def ingest(files: list[UploadFile] = File(...)) -> JSONResponse:
-    """
-    Accept one or more files (PDF, TXT, CSV, XLS, XLSX), parse them, chunk
-    the text, embed the chunks, and store them in Chroma.
-    """
+    """Accept one or more files, parse them, chunk, embed, and store in Chroma."""
     if not files:
         raise HTTPException(status_code=400, detail="No files provided.")
 
@@ -81,10 +66,7 @@ async def ingest(files: list[UploadFile] = File(...)) -> JSONResponse:
 
 @app.post("/query", response_model=QueryResponse, summary="Ask a question")
 def query(request: QueryRequest) -> QueryResponse:
-    """
-    Run the agentic RAG pipeline for the given question and return the answer
-    together with the source document names.
-    """
+    """Run the agentic RAG pipeline and return the answer with source references."""
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question must not be empty.")
 
@@ -99,10 +81,6 @@ def query(request: QueryRequest) -> QueryResponse:
         sources=result["sources"],
     )
 
-
-# ---------------------------------------------------------------------------
-# Entry-point
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     uvicorn.run("app.api:app", host="0.0.0.0", port=8080, reload=False)

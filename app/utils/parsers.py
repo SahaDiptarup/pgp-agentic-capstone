@@ -1,6 +1,6 @@
 """
 File parsers for PDF, TXT, CSV, and Excel documents.
-Returns the extracted text content as a string.
+Each function returns the extracted text as a string.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Union
 
 
 def parse_pdf(file: Union[bytes, str, Path]) -> str:
-    """Extract text from a PDF file (bytes, path string, or Path object)."""
+    """Extract text from a PDF file."""
     from pypdf import PdfReader
 
     if isinstance(file, (str, Path)):
@@ -23,14 +23,14 @@ def parse_pdf(file: Union[bytes, str, Path]) -> str:
 
 
 def parse_txt(file: Union[bytes, str, Path]) -> str:
-    """Extract text from a plain-text file."""
+    """Read text from a plain-text file."""
     if isinstance(file, (str, Path)):
         return Path(file).read_text(encoding="utf-8", errors="replace")
     return file.decode("utf-8", errors="replace")
 
 
 def parse_csv(file: Union[bytes, str, Path]) -> str:
-    """Convert a CSV file to a plain-text string (header + rows)."""
+    """Convert a CSV file to a plain-text string."""
     import pandas as pd
 
     if isinstance(file, (str, Path)):
@@ -58,26 +58,7 @@ def parse_excel(file: Union[bytes, str, Path]) -> str:
 
 
 def parse_file(filename: str, content: bytes) -> str:
-    """
-    Dispatch to the appropriate parser based on file extension.
-
-    Parameters
-    ----------
-    filename : str
-        Original file name (used to detect extension).
-    content : bytes
-        Raw file bytes.
-
-    Returns
-    -------
-    str
-        Extracted text content.
-
-    Raises
-    ------
-    ValueError
-        If the file extension is not supported.
-    """
+    """Pick the right parser based on file extension and return extracted text."""
     ext = Path(filename).suffix.lower()
     if ext == ".pdf":
         return parse_pdf(content)

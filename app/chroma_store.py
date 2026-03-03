@@ -1,8 +1,7 @@
 """
 Chroma vector store wrapper.
 
-Provides helper functions to build/load a Chroma collection from text chunks
-and to run similarity searches against it.
+Helper functions to add documents and run similarity searches.
 """
 from __future__ import annotations
 
@@ -33,7 +32,7 @@ def _get_client() -> chromadb.ClientAPI:
 
 
 def get_vector_store() -> Chroma:
-    """Load (or create) the LangChain Chroma vector store."""
+    """Load or create the Chroma vector store."""
     client = _get_client()
     embeddings = get_embeddings()
     return Chroma(
@@ -44,16 +43,7 @@ def get_vector_store() -> Chroma:
 
 
 def add_documents(chunks: list[str], metadatas: list[dict] | None = None) -> None:
-    """
-    Embed *chunks* and add them to the Chroma collection.
-
-    Parameters
-    ----------
-    chunks :
-        List of text strings to embed.
-    metadatas :
-        Optional list of metadata dicts (one per chunk).
-    """
+    """Embed chunks and add them to the Chroma collection."""
     store = get_vector_store()
     docs = [
         Document(page_content=chunk, metadata=metadatas[i] if metadatas else {})
@@ -63,15 +53,6 @@ def add_documents(chunks: list[str], metadatas: list[dict] | None = None) -> Non
 
 
 def similarity_search(query: str, k: int = 5) -> list[Document]:
-    """
-    Return the *k* most relevant document chunks for *query*.
-
-    Parameters
-    ----------
-    query :
-        Natural-language query string.
-    k :
-        Number of results to return.
-    """
+    """Return the k most relevant chunks for a query."""
     store = get_vector_store()
     return store.similarity_search(query, k=k)
