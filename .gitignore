@@ -11,7 +11,9 @@ build/
 
 # Virtual environment
 .venv/
+.cpenv/
 venv/
+cpenv/
 env/
 
 # Environment files
