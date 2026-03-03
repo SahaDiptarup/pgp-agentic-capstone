@@ -1,30 +1,26 @@
 """
 Agentic RAG pipeline.
 
-Implements a simple four-step agent loop:
-  1. Planner   – decomposes the user question into a retrieval intent.
-  2. Retriever – fetches relevant document chunks from Chroma.
-  3. Generator – calls the Gemini LLM with the retrieved context.
-  4. Validator – checks the answer for basic grounding (keywords present).
+Four steps:
+  1. Planner   - turns the user question into a retrieval query.
+  2. Retriever - fetches relevant chunks from Chroma.
+  3. Generator - calls Gemini with the retrieved context.
+  4. Validator - checks the answer is grounded in the context.
 
-The public entry-point is :func:`run_agent`.
+Main entry point: run_agent()
 """
 from __future__ import annotations
 
 import textwrap
-
 
 from langchain.schema import Document, HumanMessage, SystemMessage
 
 from app.chroma_store import similarity_search
 from app.gemini_llm import get_llm
 
-# ---------------------------------------------------------------------------
-# Prompts
-# ---------------------------------------------------------------------------
 _SYSTEM_PROMPT = textwrap.dedent(
     """\
-    You are a helpful enterprise knowledge assistant.
+    You are a helpful knowledge assistant.
     Answer the user's question strictly using the provided context.
     If the answer cannot be found in the context, say:
     "I could not find relevant information in the uploaded documents."
@@ -43,18 +39,8 @@ _CONTEXT_TEMPLATE = textwrap.dedent(
 )
 
 
-# ---------------------------------------------------------------------------
-# Agent steps
-# ---------------------------------------------------------------------------
-
 def _plan(question: str) -> str:
-    """
-    Planner step: extract the core retrieval intent from the user question.
-
-    For this minimal implementation the original question is used directly as
-    the retrieval query.  In a more advanced setup this could call the LLM to
-    reformulate the query.
-    """
+    """Planner step: returns the question as-is to use as the retrieval query."""
     return question.strip()
 
 
@@ -85,12 +71,10 @@ def _generate(question: str, docs: list[Document]) -> str:
     return response.content
 
 
-def _validate(answer: str, docs: List[Document]) -> str:
+def _validate(answer: str, docs: list[Document]) -> str:
     """
-    Validator step: basic grounding check.
-
-    Verifies that the answer shares at least some vocabulary with the
-    retrieved documents.  If not, appends a caveat.
+    Validator step: checks that the answer shares words with the retrieved docs.
+    Adds a note if grounding looks weak.
     """
     if not docs:
         return answer
@@ -100,7 +84,6 @@ def _validate(answer: str, docs: List[Document]) -> str:
     context_words = set(combined_context.split())
 
     overlap = answer_words & context_words
-    # Remove common stop-words from the overlap count
     stop_words = {
         "the", "a", "an", "is", "are", "was", "were", "in", "on", "at", "to",
         "of", "and", "or", "for", "with", "this", "that", "it", "be", "i",
@@ -110,33 +93,20 @@ def _validate(answer: str, docs: List[Document]) -> str:
 
     if len(meaningful_overlap) < 3 and "could not find" not in answer.lower():
         answer += (
-            "\n\n⚠️ *Note: The answer may not be fully grounded in the "
+            "\n\n*Note: The answer may not be fully grounded in the "
             "retrieved documents. Please verify.*"
         )
     return answer
 
 
-# ---------------------------------------------------------------------------
-# Public interface
-# ---------------------------------------------------------------------------
-
 def run_agent(question: str, k: int = 5) -> dict:
     """
     Run the full agentic RAG pipeline for a user question.
 
-    Parameters
-    ----------
-    question :
-        Natural-language question from the user.
-    k :
-        Number of document chunks to retrieve.
-
-    Returns
-    -------
-    dict with keys:
-        - ``query``      – the retrieval query used (from the planner).
-        - ``sources``    – list of source file names from retrieved chunks.
-        - ``answer``     – the final (validated) answer string.
+    Returns a dict with:
+        - query   : the retrieval query used
+        - sources : list of source file names
+        - answer  : the final answer string
     """
     query = _plan(question)
     docs = _retrieve(query, k=k)

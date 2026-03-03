@@ -3,10 +3,10 @@ fastapi>=0.110.0
 uvicorn>=0.29.0
 python-multipart>=0.0.9
 
-# LangChain core + community + Google Vertex AI
+# LangChain core + community + Google Generative AI
 langchain>=0.1.16
 langchain-community>=0.0.34
-langchain-google-vertexai>=1.0.2
+langchain-google-genai>=1.0.3
 
 # Vector store
 chromadb>=0.4.24
@@ -15,9 +15,6 @@ chromadb>=0.4.24
 pypdf>=4.1.0
 openpyxl>=3.1.2
 pandas>=2.2.1
-
-# Google Cloud
-google-cloud-aiplatform>=1.46.0
 
 # Utilities
 python-dotenv>=1.0.1
